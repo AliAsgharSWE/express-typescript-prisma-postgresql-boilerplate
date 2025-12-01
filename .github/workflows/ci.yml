@@ -37,7 +37,7 @@ jobs:
           cp .env.example .env
           npm run test
         env:
-          POSTGRES_DATABASE_URL: mysql://root@localhost:3306/lms-api
+          POSTGRES_DATABASE_URL: mysql://root@localhost:3306/api
           NODE_ENV: test
           JWT_SECRET: test-jwt-secret
           REFRESH_TOKEN_SECRET: test-refresh-token-secret

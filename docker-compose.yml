@@ -7,7 +7,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=4300
-      - POSTGRES_DATABASE_URL=mysql://root@localhost:3306/lms-api
+      - POSTGRES_DATABASE_URL=mysql://root@localhost:3306/api
       - JWT_SECRET=${JWT_SECRET}
       - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
       - FRONTEND_URL=${FRONTEND_URL}

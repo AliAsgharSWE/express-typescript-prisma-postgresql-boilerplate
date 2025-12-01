@@ -19,7 +19,7 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=4300
-      - POSTGRES_DATABASE_URL=mysql://root@localhost:3306/lms-api
+      - POSTGRES_DATABASE_URL=mysql://root@localhost:3306/api
       - RUN_SEEDS=true
       - PROMETHEUS_USER=${PROMETHEUS_USER:-admin}
       - PROMETHEUS_PASSWORD=${PROMETHEUS_PASSWORD:-admin}
