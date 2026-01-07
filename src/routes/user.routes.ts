@@ -6,6 +6,9 @@ import { requireAuth, requireRole } from "@/middleware/authMiddleware";
 import {
   createUserSchema,
   updateUserSchema,
+  updateMeSchema,
+  updateRoleSchema,
+  userQuerySchema,
 } from "@/validators/user.validator";
 import { cache } from "@/middleware/cacheMiddleware";
 
@@ -73,7 +76,8 @@ router.use(requireAuth);
  */
 router.get(
   "/",
-  requireRole(["ADMIN"]),
+  requireRole(["ADMIN", "HR", "MANAGER"]),
+  validateRequest(userQuerySchema),
   cache({ duration: 300 }), // Cache for 5 minutes
   userController.getAll
 );
@@ -228,5 +232,24 @@ router.patch(
  *         description: User not found
  */
 router.delete("/:id", requireRole(["ADMIN"]), userController.delete);
+
+// New endpoints
+router.get(
+  "/me",
+  userController.getMe
+);
+
+router.put(
+  "/me",
+  validateRequest(updateMeSchema),
+  userController.updateMe
+);
+
+router.put(
+  "/:id/role",
+  requireRole(["ADMIN"]),
+  validateRequest(updateRoleSchema),
+  userController.updateRole
+);
 
 export default router;

@@ -8,16 +8,302 @@ datasource db {
 }
 
 model user {
-  id        String    @id @default(uuid())
-  name      String    @db.VarChar(99)
-  email     String    @unique @db.VarChar(99)
-  password  String?   @db.VarChar(100)
-  role      user_role @default(USER)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                        String            @id @default(uuid())
+  name                      String            @db.VarChar(99)
+  email                     String            @unique @db.VarChar(99)
+  password                  String?           @db.VarChar(100)
+  role                      user_role         @default(USER)
+  department                String?           @db.VarChar(100)
+  contact                   String?           @db.VarChar(50)
+  status                    user_status       @default(ACTIVE)
+  refreshToken              String?
+  emailVerificationToken    String?
+  emailVerificationExpires  DateTime?
+  emailVerified             DateTime?
+  passwordResetToken        String?
+  passwordResetExpires      DateTime?
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+
+  // Relations
+  attendances               attendance[]
+  wfhRequests               wfh_request[]
+  dailyReports              daily_report[]
+  notifications             notification[]
+  auditLogs                 audit_log[]
+  createdAttendances        attendance[]      @relation("CreatedBy")
+  createdWFHRequests        wfh_request[]     @relation("CreatedBy")
+  createdDailyReports       daily_report[]    @relation("CreatedBy")
+
+  @@index([email])
+  @@index([department])
+  @@index([status])
 }
 
 enum user_role {
   ADMIN
   USER
+  MANAGER
+  HR
+}
+
+enum user_status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model attendance {
+  id              String      @id @default(uuid())
+  userId          String
+  checkInTime     DateTime
+  checkOutTime    DateTime?
+  checkInLocation String?     @db.VarChar(255)
+  checkOutLocation String?    @db.VarChar(255)
+  checkInLat      Float?
+  checkInLng      Float?
+  checkOutLat     Float?
+  checkOutLng     Float?
+  status          attendance_status @default(PRESENT)
+  workFromHome    Boolean     @default(false)
+  lateArrival     Boolean     @default(false)
+  missingCheckout Boolean     @default(false)
+  notes           String?     @db.Text
+  timezone        String      @default("UTC") @db.VarChar(50)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  createdById     String?
+
+  // Relations
+  user            user        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy       user?       @relation("CreatedBy", fields: [createdById], references: [id])
+
+  @@index([userId])
+  @@index([checkInTime])
+  @@index([status])
+  @@index([workFromHome])
+}
+
+enum attendance_status {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  ON_LEAVE
+}
+
+model wfh_request {
+  id          String            @id @default(uuid())
+  userId      String
+  date        DateTime
+  reason      String            @db.Text
+  status      wfh_request_status @default(PENDING)
+  approvedBy  String?
+  approvedAt  DateTime?
+  attachments attachment[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  createdById String?
+
+  // Relations
+  user        user              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy   user?             @relation("CreatedBy", fields: [createdById], references: [id])
+
+  @@index([userId])
+  @@index([date])
+  @@index([status])
+}
+
+enum wfh_request_status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model daily_report {
+  id          String                @id @default(uuid())
+  userId      String
+  date        DateTime
+  content     String                @db.Text
+  status      daily_report_status   @default(PENDING)
+  hrFeedback  String?               @db.Text
+  approvedBy  String?
+  approvedAt  DateTime?
+  attachments attachment[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  createdById String?
+
+  // Relations
+  user        user                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy   user?                 @relation("CreatedBy", fields: [createdById], references: [id])
+
+  @@index([userId])
+  @@index([date])
+  @@index([status])
+}
+
+enum daily_report_status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model attachment {
+  id            String    @id @default(uuid())
+  fileName      String    @db.VarChar(255)
+  filePath      String    @db.VarChar(500)
+  fileType      String    @db.VarChar(50)
+  fileSize      Int
+  wfhRequestId  String?
+  dailyReportId String?
+  createdAt     DateTime  @default(now())
+
+  // Relations
+  wfhRequest    wfh_request?  @relation(fields: [wfhRequestId], references: [id], onDelete: Cascade)
+  dailyReport   daily_report? @relation(fields: [dailyReportId], references: [id], onDelete: Cascade)
+
+  @@index([wfhRequestId])
+  @@index([dailyReportId])
+}
+
+model notification {
+  id        String              @id @default(uuid())
+  userId    String
+  title     String              @db.VarChar(255)
+  message   String              @db.Text
+  type      notification_type   @default(INFO)
+  read      Boolean             @default(false)
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  // Relations
+  user      user                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+enum notification_type {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+  REMINDER
+}
+
+model workspace_settings {
+  id                String    @id @default(uuid())
+  key               String    @unique @db.VarChar(100)
+  value             String    @db.Text
+  description       String?   @db.VarChar(255)
+  updatedAt         DateTime  @updatedAt
+  updatedBy         String?
+
+  @@index([key])
+}
+
+model role_permission {
+  id          String    @id @default(uuid())
+  role        String    @db.VarChar(50)
+  permission  String    @db.VarChar(100)
+  enabled     Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([role, permission])
+  @@index([role])
+}
+
+model audit_log {
+  id          String    @id @default(uuid())
+  userId      String?
+  action      String    @db.VarChar(100)
+  resource    String?   @db.VarChar(100)
+  resourceId  String?
+  details     Json?
+  ipAddress   String?   @db.VarChar(45)
+  userAgent   String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  user        user?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([resource, resourceId])
+}
+
+model api_key {
+  id          String    @id @default(uuid())
+  key         String    @unique @db.VarChar(255)
+  name        String    @db.VarChar(100)
+  active      Boolean   @default(true)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([key])
+  @@index([active])
+}
+
+model security_activity {
+  id          String                @id @default(uuid())
+  userId      String?
+  action      security_action_type
+  success     Boolean               @default(false)
+  ipAddress   String?               @db.VarChar(45)
+  userAgent   String?               @db.VarChar(255)
+  details     Json?
+  createdAt   DateTime              @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([success])
+  @@index([createdAt])
+}
+
+enum security_action_type {
+  LOGIN_ATTEMPT
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_RESET_REQUEST
+  PASSWORD_RESET_SUCCESS
+  PASSWORD_CHANGE
+  TOKEN_REFRESH
+  API_KEY_USED
+  API_KEY_ROTATED
+  API_KEY_INVALIDATED
+}
+
+model checkpoint {
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(100)
+  description String?   @db.VarChar(255)
+  location    String?   @db.VarChar(255)
+  lat         Float?
+  lng         Float?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([active])
+}
+
+model location {
+  id          String    @id @default(uuid())
+  name        String    @db.VarChar(100)
+  address     String?   @db.VarChar(255)
+  lat         Float
+  lng         Float
+  radius      Float     @default(100) // in meters
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([active])
 }

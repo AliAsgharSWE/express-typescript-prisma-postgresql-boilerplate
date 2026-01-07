@@ -2,6 +2,13 @@ import express from "express";
 import { ENV } from "@/config/env";
 import userRoutes from "@/routes/user.routes";
 import authRoutes from "@/routes/auth.routes";
+import attendanceRoutes from "@/routes/attendance.routes";
+import reportRoutes from "@/routes/report.routes";
+import notificationRoutes from "@/routes/notification.routes";
+import settingsRoutes from "@/routes/settings.routes";
+import auditRoutes from "@/routes/audit.routes";
+import dailyReportRoutes from "@/routes/dailyReport.routes";
+import dashboardRoutes from "@/routes/dashboard.routes";
 import { errorHandler } from "@/middleware/errorHandler";
 import { setupSecurityHeaders } from "@/middleware/securityHeaders";
 import { apiLimiter } from "@/middleware/rateLimiter";
@@ -63,6 +70,14 @@ app.get("/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/audit", auditRoutes);
+app.use("/api", dailyReportRoutes); // Daily reports and attachments
+app.use("/api/dashboard", dashboardRoutes);
 
 // Move Swagger docs before error handler
 const swaggerOptions = {
